@@ -420,6 +420,122 @@ export function showPrompt(content: any, value = "", rows = 3) {
   });
 }
 
+/**
+ * Show a modal prompting the user to enter a secret string (password).
+ *
+ * This helper displays a modal consistent with the rest of the app UI but
+ * uses the {@link PasswordInput} component so characters are hidden while
+ * typing. It returns a promise that resolves with the user input when the
+ * confirm button is pressed, or an empty string if the user cancels or
+ * closes the modal.
+ *
+ * @param content The prompt text shown at the top of the modal.
+ * @param value An optional initial value for the input.
+ * @returns A Promise resolved with the final input value.
+ */
+export function showPasswordPrompt(content: any, value = "") {
+  const div = document.createElement("div");
+  // Assign both the default mask class and a unique class so styles can target only this prompt
+  div.className = "modal-mask password-modal-mask";
+  // Create a style element to narrow the modal width specifically for this prompt
+  const styleEl = document.createElement("style");
+  styleEl.innerHTML = `
+    /*
+      Narrow the modal container specifically within password prompts.
+      Reduce the width to roughly half of the viewport (50vw) and cap the
+      maximum width to 480px so it appears less wide on large screens.
+    */
+    .password-modal-mask .modal-container {
+      width: 50vw;
+      max-width: 480px;
+      min-width: 300px;
+    }
+    /* Center the title in the modal header and reposition the header actions */
+    .password-modal-mask .modal-header {
+      justify-content: center;
+      position: relative;
+    }
+    .password-modal-mask .modal-header-actions {
+      position: absolute;
+      right: var(--modal-padding);
+    }
+    .password-modal-mask .modal-title {
+      margin: 0 auto;
+      text-align: center;
+      width: 100%;
+    }
+  `;
+  div.appendChild(styleEl);
+  document.body.appendChild(div);
+
+  const root = createRoot(div);
+  const closeModal = () => {
+    root.unmount();
+    div.remove();
+  };
+
+  return new Promise<string>((resolve) => {
+    let userInput = value;
+
+    root.render(
+      <Modal
+        title={content}
+        actions={[
+          <IconButton
+            key="cancel"
+            text={Locale.UI.Cancel}
+            onClick={() => {
+              // resolve empty string on cancel to signal abort
+              resolve("");
+              closeModal();
+            }}
+            icon={<CancelIcon />}
+            bordered
+            shadow
+            tabIndex={0}
+          ></IconButton>,
+          <IconButton
+            key="confirm"
+            text={Locale.UI.Confirm}
+            type="primary"
+            onClick={() => {
+              resolve(userInput);
+              closeModal();
+            }}
+            icon={<ConfirmIcon />}
+            bordered
+            shadow
+            tabIndex={0}
+          ></IconButton>,
+        ]}
+        onClose={() => {
+          // Closing via outside click or ESC should resolve empty string
+          resolve("");
+          closeModal();
+        }}
+      >
+        <div style={{ padding: "8px 0" }}>
+          {/*
+            Use defaultValue instead of value to avoid controlling the input.
+            If we bind the value prop without a corresponding state setter,
+            the input becomes read-only. Using defaultValue allows user input while
+            still passing an initial value from the caller.
+          */}
+          <PasswordInput
+            autoFocus
+            defaultValue={value}
+            onChange={(e) => {
+              // Update our captured variable on every change
+              const target = e.target as HTMLInputElement;
+              userInput = target.value;
+            }}
+          />
+        </div>
+      </Modal>,
+    );
+  });
+}
+
 export function showImageModal(img: string) {
   showModal({
     title: Locale.Export.Image.Modal,

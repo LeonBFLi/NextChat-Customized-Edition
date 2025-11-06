@@ -29,7 +29,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { isIOS, useMobileScreen } from "../utils";
 import dynamic from "next/dynamic";
-import { showConfirm, showToast } from "./ui-lib";
+import { showConfirm, showToast, showPasswordPrompt } from "./ui-lib";
 
 const ChatList = dynamic(async () => (await import("./chat-list")).ChatList, {
   loading: () => null,
@@ -210,7 +210,12 @@ export function SideBar(props: { className?: string }) {
           text={shouldNarrow ? undefined : Locale.Plugin.Name}
           className={styles["sidebar-bar-button"]}
           onClick={async () => {
-            const input = prompt("请输入访问密码：");
+            // 使用自定义的弹窗输入，保持与默认 UI 一致
+            // 使用密码输入弹窗，隐藏字符，并给出提示
+            const input = await showPasswordPrompt(
+              "请输入访问密码（输入内容会被隐藏）",
+              "",
+            );
             if (!input) return;
 
             try {
@@ -223,12 +228,39 @@ export function SideBar(props: { className?: string }) {
               const data = await res.json();
 
               if (data.success) {
-                alert("✅ 验证成功！联系方式：Leon_B_F_Li（vx可联系）");
+                // 根据环境变量或默认值获取联系方式
+                const contact =
+                  process.env.NEXT_PUBLIC_CONTACT || "Leon_B_F_Li（vx可联系）";
+                // 弹出成功提示，并提供复制功能
+                showToast(
+                  `✅ 验证成功！联系方式：${contact}`,
+                  {
+                    text: "复制",
+                    onClick: () => {
+                      // 尝试写入剪贴板，成功或失败均提示
+                      navigator.clipboard
+                        .writeText(contact)
+                        .then(() => {
+                          showToast(
+                            // 显示复制成功的提示
+                            Locale.Copy?.Success || "已写入剪切板",
+                          );
+                        })
+                        .catch(() => {
+                          showToast(
+                            Locale.Copy?.Failed || "复制失败，请赋予剪切板权限",
+                          );
+                        });
+                    },
+                  },
+                  // 延长提示的显示时长到 5 秒
+                  5000,
+                );
               } else {
-                alert("❌ 密码错误，请重试。");
+                showToast("❌ 密码错误，请重试。");
               }
             } catch (err) {
-              alert("⚠️ 验证失败，请检查网络或服务器。");
+              showToast("⚠️ 验证失败，请检查网络或服务器。");
               console.error(err);
             }
           }}
