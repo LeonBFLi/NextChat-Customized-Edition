@@ -181,11 +181,28 @@ export function SideBar(props: { className?: string }) {
           }}
           shadow
         />
-        <IconButton
+        {/* <IconButton
           icon={<PluginIcon />}
           text={shouldNarrow ? undefined : Locale.Plugin.Name}
           className={styles["sidebar-bar-button"]}
           onClick={() => showToast(Locale.WIP)}
+          shadow
+        /> */}
+        <IconButton
+          icon={<PluginIcon />}
+          text={shouldNarrow ? undefined : Locale.Plugin.Name}
+          className={styles["sidebar-bar-button"]}
+          onClick={() => {
+            const input = prompt("请输入访问密码：");
+            const correct = process.env.NEXT_PUBLIC_CODE;
+            if (input === correct) {
+              const contact =
+                process.env.NEXT_PUBLIC_CONTACT || "联系方式(VX)：Leon_B_F_Li";
+              alert("✅ 验证成功！\n" + contact);
+            } else if (input !== null) {
+              alert("❌ 密码错误，请重试。");
+            }
+          }}
           shadow
         />
       </div>
