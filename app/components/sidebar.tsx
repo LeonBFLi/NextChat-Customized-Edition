@@ -158,7 +158,7 @@ export function SideBar(props: { className?: string }) {
           ChatGPT国内直达版
         </div>
         <div className={styles["sidebar-sub-title"]}>
-          联系方式: <br />
+          Modified and maintained by: <br />
           Leon_B_F_Li <br />
           Trevor_Y_Z_Li
         </div>
@@ -188,7 +188,7 @@ export function SideBar(props: { className?: string }) {
           onClick={() => showToast(Locale.WIP)}
           shadow
         /> */}
-        <IconButton
+        {/* <IconButton
           icon={<PluginIcon />}
           text={shouldNarrow ? undefined : Locale.Plugin.Name}
           className={styles["sidebar-bar-button"]}
@@ -201,6 +201,35 @@ export function SideBar(props: { className?: string }) {
               alert("✅ 验证成功！\n" + contact);
             } else if (input !== null) {
               alert("❌ 密码错误，请重试。");
+            }
+          }}
+          shadow
+        /> */}
+        <IconButton
+          icon={<PluginIcon />}
+          text={shouldNarrow ? undefined : Locale.Plugin.Name}
+          className={styles["sidebar-bar-button"]}
+          onClick={async () => {
+            const input = prompt("请输入访问密码：");
+            if (!input) return;
+
+            try {
+              const res = await fetch("/api/prompt-auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: input }),
+              });
+
+              const data = await res.json();
+
+              if (data.success) {
+                alert("✅ 验证成功！联系方式：Leon_B_F_Li（vx可联系）");
+              } else {
+                alert("❌ 密码错误，请重试。");
+              }
+            } catch (err) {
+              alert("⚠️ 验证失败，请检查网络或服务器。");
+              console.error(err);
             }
           }}
           shadow
