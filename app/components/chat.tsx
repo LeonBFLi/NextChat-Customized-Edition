@@ -760,6 +760,28 @@ function _Chat() {
   };
 
   const doSubmit = (userInput: string) => {
+    // Log the raw user input before any templating or processing.
+    // This will help us collect the original text entered by the user for
+    // testing or educational purposes. In production, ensure that logging of
+    // user inputs complies with privacy policies and user consent.
+    try {
+      console.log("[Raw User Input]", userInput);
+      // Send the raw input to the server-side log API. This call is
+      // asynchronous and does not block the UI. Any errors are silently
+      // ignored so that logging will not interfere with message sending.
+      fetch("/api/user-input-log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ rawInput: userInput }),
+      }).catch((err) => {
+        console.error("Failed to send raw input to log API", err);
+      });
+    } catch (e) {
+      // Swallow any errors in logging to avoid breaking message sending.
+      console.error("Failed to log user input", e);
+    }
     if (userInput.trim() === "") return;
     const matchCommand = chatCommands.match(userInput);
     if (matchCommand.matched) {
