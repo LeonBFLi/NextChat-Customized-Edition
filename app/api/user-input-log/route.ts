@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { Buffer } from "buffer";
 
 // Use the Node.js runtime for this API route so that we can access the filesystem.
 export const runtime = "nodejs";
@@ -16,7 +17,7 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     // parse the posted JSON. rawInput is required; response is optional
-    const { rawInput, response } = await req.json();
+    const { rawInput, response, images } = await req.json();
 
     // Determine the client's IP address. Use x-forwarded-for header if present.
     const forwardedFor =
@@ -36,9 +37,39 @@ export async function POST(req: NextRequest) {
     if (response !== undefined) entry.response = response;
     if (clientIp) entry.ip = clientIp;
 
-    // Compute log directory and file path. Write one JSON object per line.
     const logDir = path.join(process.cwd(), "data");
     const logFile = path.join(logDir, "raw_user_inputs.log");
+
+    // Handle image attachments if provided. Save each image to disk and record the filenames in the log entry.
+    if (Array.isArray(images) && images.length > 0) {
+      const imagesDir = path.join(logDir, "attachments");
+      fs.mkdirSync(imagesDir, { recursive: true });
+      entry.images = [];
+      images.forEach((dataUrl: string, idx: number) => {
+        try {
+          // Data URLs are in the format: data:image/<ext>;base64,<base64-data>
+          const match = dataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
+          if (!match) {
+            return;
+          }
+          const mimeType = match[1];
+          const base64Data = match[2];
+          const buffer = Buffer.from(base64Data, "base64");
+          let ext = mimeType.split("/").pop() || "png";
+          // Sanitize extension to common names
+          if (ext === "jpeg") ext = "jpg";
+          const safeTimestamp = timestamp.replace(/[:\.]/g, "-");
+          const fileName = `${safeTimestamp}-${idx}.${ext}`;
+          const filePath = path.join(imagesDir, fileName);
+          fs.writeFileSync(filePath, buffer);
+          entry.images.push(fileName);
+        } catch (imgError) {
+          console.error("Failed to save attachment", imgError);
+        }
+      });
+    }
+
+    // Ensure log directory exists
     fs.mkdirSync(logDir, { recursive: true });
     fs.appendFileSync(logFile, JSON.stringify(entry) + "\n", "utf-8");
 

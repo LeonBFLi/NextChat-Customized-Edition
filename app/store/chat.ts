@@ -390,6 +390,28 @@ export const useChatStore = createPersistStore(
             if (message) {
               botMessage.content = message;
               get().onNewMessage(botMessage);
+              // After the assistant has finished responding, send the raw user input and the assistant response to the log API.
+              try {
+                // `content` refers to the raw user input passed into onUserInput.
+                // We send the assistant's response (message) as well.
+                fetch("/api/user-input-log", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    rawInput: content,
+                    response: message,
+                  }),
+                }).catch((err) => {
+                  console.error("[Chat Store] Failed to send log entry", err);
+                });
+              } catch (logErr) {
+                console.error(
+                  "[Chat Store] Failed to prepare log entry",
+                  logErr,
+                );
+              }
             }
             ChatControllerPool.remove(session.id, botMessage.id);
           },

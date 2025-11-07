@@ -766,6 +766,21 @@ function _Chat() {
     // user inputs complies with privacy policies and user consent.
     try {
       console.log("[Raw User Input]", userInput);
+      // Log the raw input along with any attached images immediately. This ensures that images are
+      // captured before they are cleared from state. The server will handle saving the images
+      // and will not yet include the assistant's response.
+      const imagesToLog = attachImages ? [...attachImages] : [];
+      if (imagesToLog.length > 0) {
+        fetch("/api/user-input-log", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ rawInput: userInput, images: imagesToLog }),
+        }).catch((err) => {
+          console.error("Failed to send initial log with images", err);
+        });
+      }
     } catch (e) {
       // Swallow any errors in logging to avoid breaking message sending.
       console.error("Failed to log user input", e);
@@ -781,32 +796,6 @@ function _Chat() {
     setIsLoading(true);
     chatStore.onUserInput(userInput, attachImages).then(() => {
       setIsLoading(false);
-      try {
-        // After the assistant's response has been received, find the last assistant message
-        const session = chatStore.currentSession();
-        const messages = session.messages;
-        // Find the last message from the assistant
-        let response: string | undefined;
-        for (let i = messages.length - 1; i >= 0; i--) {
-          const m = messages[i];
-          if (m.role === "assistant") {
-            response = m.content;
-            break;
-          }
-        }
-        // Send both the raw input and the assistant's response (if available) to the log API
-        fetch("/api/user-input-log", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ rawInput: userInput, response }),
-        }).catch((err) => {
-          console.error("Failed to send user and response to log API", err);
-        });
-      } catch (logError) {
-        console.error("Failed to prepare log entry", logError);
-      }
     });
     setAttachImages([]);
     localStorage.setItem(LAST_INPUT_KEY, userInput);
