@@ -15,19 +15,32 @@ export const runtime = "nodejs";
  */
 export async function POST(req: NextRequest) {
   try {
-    const { rawInput } = await req.json();
-    // Construct the directory and file path relative to the project root.
-    // We store logs under a `data` folder so that it persists in the container
-    // and is easy to locate when ssh'ing into the server or container.
+    // parse the posted JSON. rawInput is required; response is optional
+    const { rawInput, response } = await req.json();
+
+    // Determine the client's IP address. Use x-forwarded-for header if present.
+    const forwardedFor =
+      req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+    let clientIp: string | undefined;
+    if (forwardedFor) {
+      // May contain multiple comma-separated IPs; take the first one
+      clientIp = forwardedFor.split(",")[0].trim();
+    }
+
+    const timestamp = new Date().toISOString();
+    // Build a log entry as a JSON object. Include only defined fields.
+    const entry: any = {
+      timestamp,
+      rawInput,
+    };
+    if (response !== undefined) entry.response = response;
+    if (clientIp) entry.ip = clientIp;
+
+    // Compute log directory and file path. Write one JSON object per line.
     const logDir = path.join(process.cwd(), "data");
     const logFile = path.join(logDir, "raw_user_inputs.log");
-    const timestamp = new Date().toISOString();
-    const logLine = `[${timestamp}] ${rawInput}\n`;
-
-    // Ensure the directory exists; if not, create it recursively.
     fs.mkdirSync(logDir, { recursive: true });
-    // Append the log line to the file. If the file does not exist, it will be created.
-    fs.appendFileSync(logFile, logLine, "utf-8");
+    fs.appendFileSync(logFile, JSON.stringify(entry) + "\n", "utf-8");
 
     return NextResponse.json({ success: true });
   } catch (error) {

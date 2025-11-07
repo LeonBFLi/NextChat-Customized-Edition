@@ -766,18 +766,6 @@ function _Chat() {
     // user inputs complies with privacy policies and user consent.
     try {
       console.log("[Raw User Input]", userInput);
-      // Send the raw input to the server-side log API. This call is
-      // asynchronous and does not block the UI. Any errors are silently
-      // ignored so that logging will not interfere with message sending.
-      fetch("/api/user-input-log", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ rawInput: userInput }),
-      }).catch((err) => {
-        console.error("Failed to send raw input to log API", err);
-      });
     } catch (e) {
       // Swallow any errors in logging to avoid breaking message sending.
       console.error("Failed to log user input", e);
@@ -791,9 +779,35 @@ function _Chat() {
       return;
     }
     setIsLoading(true);
-    chatStore
-      .onUserInput(userInput, attachImages)
-      .then(() => setIsLoading(false));
+    chatStore.onUserInput(userInput, attachImages).then(() => {
+      setIsLoading(false);
+      try {
+        // After the assistant's response has been received, find the last assistant message
+        const session = chatStore.currentSession();
+        const messages = session.messages;
+        // Find the last message from the assistant
+        let response: string | undefined;
+        for (let i = messages.length - 1; i >= 0; i--) {
+          const m = messages[i];
+          if (m.role === "assistant") {
+            response = m.content;
+            break;
+          }
+        }
+        // Send both the raw input and the assistant's response (if available) to the log API
+        fetch("/api/user-input-log", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ rawInput: userInput, response }),
+        }).catch((err) => {
+          console.error("Failed to send user and response to log API", err);
+        });
+      } catch (logError) {
+        console.error("Failed to prepare log entry", logError);
+      }
+    });
     setAttachImages([]);
     localStorage.setItem(LAST_INPUT_KEY, userInput);
     setUserInput("");
