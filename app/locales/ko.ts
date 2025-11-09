@@ -176,7 +176,7 @@ const ko: PartialLocaleType = {
     Add: "프롬프트 추가",
   },
   Plugin: {
-    Name: "플러그인",
+    Name: "연락처 정보 가져오기",
   },
   FineTuned: {
     Sysmessage: "당신은 어시스턴트입니다",

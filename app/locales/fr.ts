@@ -234,7 +234,7 @@ const fr: PartialLocaleType = {
     Add: "Ajouter un prompt",
   },
   Plugin: {
-    Name: "Extension",
+    Name: "Obtenir les coordonnées",
   },
   FineTuned: {
     Sysmessage: "Eres un asistente que",

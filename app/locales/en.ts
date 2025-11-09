@@ -410,7 +410,7 @@ const en: LocaleType = {
     Revert: "Revert",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "Get Contact Info",
   },
   FineTuned: {
     Sysmessage: "You are an assistant that",

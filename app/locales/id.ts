@@ -302,7 +302,7 @@ const id: PartialLocaleType = {
     Revert: "Kembali ke Posisi Sebelumnya",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "Dapatkan info kontak",
   },
   FineTuned: {
     Sysmessage: "Anda adalah asisten yang",

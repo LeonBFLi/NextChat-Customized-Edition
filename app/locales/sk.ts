@@ -412,7 +412,7 @@ const sk: PartialLocaleType = {
     Revert: "Vrátiť späť",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "Získať kontaktné informácie",
   },
   FineTuned: {
     Sysmessage: "Ste asistent, ktorý",

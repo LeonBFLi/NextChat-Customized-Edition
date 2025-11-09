@@ -176,7 +176,7 @@ const vi: PartialLocaleType = {
     Add: "Thêm tin nhắn",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "Lấy thông tin liên hệ",
   },
   FineTuned: {
     Sysmessage: "Bạn là một trợ lý",

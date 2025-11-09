@@ -258,7 +258,7 @@ const bn: PartialLocaleType = {
     Revert: "পূর্ববর্তী অবস্থানে ফিরে যান",
   },
   Plugin: {
-    Name: "প্লাগইন",
+    Name: "যোগাযোগের তথ্য পান",
   },
   FineTuned: {
     Sysmessage: "আপনি একটি সহকারী যা",
