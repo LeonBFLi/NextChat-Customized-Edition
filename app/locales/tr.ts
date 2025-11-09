@@ -181,7 +181,7 @@ const tr: PartialLocaleType = {
     Add: "Yeni Ekle",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "İletişim bilgilerini al",
   },
   FineTuned: {
     Sysmessage: "Sen bir asistansın",

@@ -394,7 +394,7 @@ const pt: PartialLocaleType = {
     Revert: "Reverter",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "Obter informações de contato",
   },
   FineTuned: {
     Sysmessage: "Você é um assistente que",

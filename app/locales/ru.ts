@@ -181,7 +181,7 @@ const ru: PartialLocaleType = {
     Add: "Добавить подсказку",
   },
   Plugin: {
-    Name: "Плагин",
+    Name: "Получить контактную информацию",
   },
   FineTuned: {
     Sysmessage: "Вы - ассистент, который",

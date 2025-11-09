@@ -178,7 +178,7 @@ const cs: PartialLocaleType = {
     Add: "Přidat pokyn",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "Získat kontaktní údaje",
   },
   FineTuned: {
     Sysmessage: "Jste asistent, který",

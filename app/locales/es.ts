@@ -180,7 +180,7 @@ const es: PartialLocaleType = {
     Add: "Add One",
   },
   Plugin: {
-    Name: "Plugin",
+    Name: "Obtener información de contacto",
   },
   FineTuned: {
     Sysmessage: "Eres un asistente que",
