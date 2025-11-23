@@ -69,7 +69,7 @@ jobs:
 
             docker tag "$IMAGE_FULL" "$IMAGE:latest"
 
-            docker run --name "$CONTAINER" -d -p $PORTS -v "$DATA_PATH":/app/data \
+            docker run --name "$CONTAINER" -itd -p $PORTS -v "$DATA_PATH":/app/data \
               -e OPENAI_API_KEY="$OPENAI_API_KEY" \
               -e BASE_URL="$BASE_URL" \
               -e CODE="$CODE" \
