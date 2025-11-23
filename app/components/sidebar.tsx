@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "./home.module.scss";
 
@@ -12,6 +12,8 @@ import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
 import PluginIcon from "../icons/plugin.svg";
 import DragIcon from "../icons/drag.svg";
+import ConfirmIcon from "../icons/confirm.svg";
+import CancelIcon from "../icons/cancel.svg";
 
 import Locale from "../locales";
 
@@ -29,7 +31,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { isIOS, useMobileScreen } from "../utils";
 import dynamic from "next/dynamic";
-import { showConfirm, showToast, showPasswordPrompt } from "./ui-lib";
+import { Modal, showConfirm, showPasswordPrompt, showToast } from "./ui-lib";
+import { createRoot } from "react-dom/client";
 
 const ChatList = dynamic(async () => (await import("./chat-list")).ChatList, {
   loading: () => null,
@@ -52,6 +55,117 @@ function useHotKey() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   });
+}
+
+function LeaveMessageModal(props: {
+  code: string;
+  onClose: () => void;
+}) {
+  const [nickname, setNickname] = useState("");
+  const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    const trimmedNickname = nickname.trim();
+    const trimmedContent = content.trim();
+
+    if (!trimmedNickname || !trimmedContent) {
+      showToast("请填写昵称和留言内容哦～");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const res = await fetch("/api/leon-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: props.code,
+          nickname: trimmedNickname,
+          content: trimmedContent,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast("留言已送达，感谢你的支持！");
+        props.onClose();
+      } else {
+        showToast(data.message ?? "提交失败，请稍后重试。");
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("⚠️ 提交失败，请检查网络或服务器。");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      title="给Leon留言"
+      actions={[
+        <IconButton
+          key="cancel"
+          text="取消"
+          icon={<CancelIcon />}
+          bordered
+          shadow
+          onClick={props.onClose}
+        />,
+        <IconButton
+          key="confirm"
+          text={submitting ? "提交中..." : "提交留言"}
+          type="primary"
+          icon={<ConfirmIcon />}
+          bordered
+          shadow
+          disabled={submitting}
+          onClick={handleSubmit}
+        />,
+      ]}
+      onClose={props.onClose}
+    >
+      <div className={styles["leave-message-form"]}>
+        <label className={styles["leave-message-label"]}>留言昵称</label>
+        <input
+          className={styles["leave-message-input"]}
+          placeholder="方便我称呼你的昵称"
+          value={nickname}
+          onChange={(e) => setNickname(e.currentTarget.value)}
+        />
+
+        <label className={styles["leave-message-label"]}>留言内容</label>
+        <textarea
+          className={styles["leave-message-textarea"]}
+          placeholder="写下想对Leon说的话吧～"
+          rows={4}
+          value={content}
+          onChange={(e) => setContent(e.currentTarget.value)}
+        />
+
+        <div className={styles["leave-message-tip"]}>
+          留言会安全存放在服务器本地，仅供 Leon 查看。
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function showLeaveMessageModal(code: string) {
+  const div = document.createElement("div");
+  div.className = "modal-mask";
+  document.body.appendChild(div);
+
+  const root = createRoot(div);
+
+  const handleClose = () => {
+    root.unmount();
+    div.remove();
+  };
+
+  root.render(<LeaveMessageModal code={code} onClose={handleClose} />);
 }
 
 function useDragSideBar() {
@@ -142,6 +256,34 @@ export function SideBar(props: { className?: string }) {
   );
 
   useHotKey();
+
+  const handleLeaveMessageClick = async () => {
+    const input = await showPasswordPrompt(
+      "请输入访问密码（输入内容会被隐藏）",
+      "",
+    );
+
+    if (!input) return;
+
+    try {
+      const res = await fetch("/api/prompt-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: input }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showLeaveMessageModal(input);
+      } else {
+        showToast("❌ 密码错误，请重试。");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("⚠️ 验证失败，请检查网络或服务器。");
+    }
+  };
 
   return (
     <div
@@ -266,6 +408,13 @@ export function SideBar(props: { className?: string }) {
           }}
           shadow
         />
+        <IconButton
+          icon={<PluginIcon />}
+          text={shouldNarrow ? undefined : "给Leon留言"}
+          className={styles["sidebar-bar-button"]}
+          onClick={handleLeaveMessageClick}
+          shadow
+        />
       </div>
 
       <div
@@ -296,13 +445,15 @@ export function SideBar(props: { className?: string }) {
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
           </div>
-          <div className={styles["sidebar-action"]}>
-            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-              <IconButton icon={<GithubIcon />} shadow />
-            </a>
-          </div>
         </div>
-        <div>
+        <div className={styles["sidebar-primary-actions"]}>
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+            <IconButton
+              icon={<GithubIcon />}
+              text={shouldNarrow ? undefined : "GitHub"}
+              shadow
+            />
+          </a>
           <IconButton
             icon={<AddIcon />}
             text={shouldNarrow ? undefined : Locale.Home.NewChat}
