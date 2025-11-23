@@ -49,6 +49,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
+          envs: OPENAI_API_KEY,BASE_URL,CODE
           script: |
             set -eo pipefail
             IMAGE="${{ env.IMAGE_NAME }}"
