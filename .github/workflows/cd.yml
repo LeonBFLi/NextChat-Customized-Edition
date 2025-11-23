@@ -2,7 +2,7 @@ name: Deploy Docker image
 
 on:
   push:
-    branches: [main]
+    branches: [dev-hack]
   workflow_dispatch:
 
 env:
