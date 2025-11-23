@@ -64,8 +64,7 @@ jobs:
             docker stop "$CONTAINER" || true
             docker rm "$CONTAINER" || true
 
-            docker images "$IMAGE" --format '{{.Repository}}:{{.Tag}}' | \ 
-              grep -v -E "(${NEW_TAG}|latest)" | xargs -r docker rmi -f || true
+            docker images "$IMAGE" --format '{{.Repository}}:{{.Tag}}' | grep -v -E "(${NEW_TAG}|latest)" | xargs -r docker rmi -f || true
 
             docker tag "$IMAGE_FULL" "$IMAGE:latest"
 
