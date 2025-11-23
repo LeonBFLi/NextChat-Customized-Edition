@@ -4,7 +4,6 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
-import GithubIcon from "../icons/github.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
 import CloseIcon from "../icons/close.svg";
@@ -25,7 +24,6 @@ import {
   MIN_SIDEBAR_WIDTH,
   NARROW_SIDEBAR_WIDTH,
   Path,
-  REPO_URL,
 } from "../constant";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -408,13 +406,6 @@ export function SideBar(props: { className?: string }) {
           }}
           shadow
         />
-        <IconButton
-          icon={<PluginIcon />}
-          text={shouldNarrow ? undefined : "给Leon留言"}
-          className={styles["sidebar-bar-button"]}
-          onClick={handleLeaveMessageClick}
-          shadow
-        />
       </div>
 
       <div
@@ -447,13 +438,13 @@ export function SideBar(props: { className?: string }) {
           </div>
         </div>
         <div className={styles["sidebar-primary-actions"]}>
-          <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-            <IconButton
-              icon={<GithubIcon />}
-              text={shouldNarrow ? undefined : "GitHub"}
-              shadow
-            />
-          </a>
+          <IconButton
+            icon={<PluginIcon />}
+            text={shouldNarrow ? undefined : "给LEON留言"}
+            className={styles["sidebar-bar-button"]}
+            onClick={handleLeaveMessageClick}
+            shadow
+          />
           <IconButton
             icon={<AddIcon />}
             text={shouldNarrow ? undefined : Locale.Home.NewChat}
