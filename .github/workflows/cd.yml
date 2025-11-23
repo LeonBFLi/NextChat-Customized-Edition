@@ -1,0 +1,76 @@
+name: Deploy Docker image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/nextchath
+  CONTAINER_NAME: GPT_4o_server1_2025NOV9
+  DATA_VOLUME: /var/nextchat
+  HOST_PORTS: 3001:3000
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to remote host
+        uses: appleboy/ssh-action@v0.1.8
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          CODE: ${{ secrets.CODE }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            set -eo pipefail
+            IMAGE="${{ env.IMAGE_NAME }}"
+            NEW_TAG="${{ github.sha }}"
+            CONTAINER="${{ env.CONTAINER_NAME }}"
+            DATA_PATH="${{ env.DATA_VOLUME }}"
+            PORTS="${{ env.HOST_PORTS }}"
+            IMAGE_FULL="$IMAGE:$NEW_TAG"
+
+            docker pull "$IMAGE_FULL"
+            docker stop "$CONTAINER" || true
+            docker rm "$CONTAINER" || true
+
+            docker images "$IMAGE" --format '{{.Repository}}:{{.Tag}}' | \ 
+              grep -v -E "(${NEW_TAG}|latest)" | xargs -r docker rmi -f || true
+
+            docker tag "$IMAGE_FULL" "$IMAGE:latest"
+
+            docker run --name "$CONTAINER" -d -p $PORTS -v "$DATA_PATH":/app/data \
+              -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+              -e BASE_URL="$BASE_URL" \
+              -e CODE="$CODE" \
+              "$IMAGE_FULL"
