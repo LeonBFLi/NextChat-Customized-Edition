@@ -35,9 +35,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:latest
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -54,19 +52,20 @@ jobs:
           script: |
             set -eo pipefail
             IMAGE="${{ env.IMAGE_NAME }}"
-            NEW_TAG="${{ github.sha }}"
+            TAG="latest"
             CONTAINER="${{ env.CONTAINER_NAME }}"
             DATA_PATH="${{ env.DATA_VOLUME }}"
             PORTS="${{ env.HOST_PORTS }}"
-            IMAGE_FULL="$IMAGE:$NEW_TAG"
+            IMAGE_FULL="$IMAGE:$TAG"
+
+            docker images "$IMAGE" --format '{{.Repository}}:{{.Tag}}' \
+              | grep "^$IMAGE:" \
+              | grep -v "^$IMAGE:$TAG$" \
+              | xargs -r docker rmi || true
 
             docker pull "$IMAGE_FULL"
             docker stop "$CONTAINER" || true
             docker rm "$CONTAINER" || true
-
-            docker images "$IMAGE" --format '{{.Repository}}:{{.Tag}}' | grep -v -E "(${NEW_TAG}|latest)" | xargs -r docker rmi -f || true
-
-            docker tag "$IMAGE_FULL" "$IMAGE:latest"
 
             docker run --name "$CONTAINER" -itd -p $PORTS -v "$DATA_PATH":/app/data \
               -e OPENAI_API_KEY="$OPENAI_API_KEY" \
